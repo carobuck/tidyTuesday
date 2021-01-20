@@ -2,7 +2,9 @@
 ## Kenya census data for Tidy Tuesday!
 
 # idea: make map of things in ggmap? Use icons for labels??
-
+# things I'd like to figure out with the font-awesome icons (not sure it's actually doable in Rstudio...maybe only markdown/I think I saw something about window()???)
+# https://cran.r-project.org/web/packages/emojifont/vignettes/emojifont.html#ggplot2
+# https://fontawesome.com/cheatsheet?from=io
 
 ## HOW FEASIBLE IS A SHAPEFILE/GGMAP?? Doable. :)----
 ## Trying this:
@@ -131,7 +133,7 @@ leaflet() %>%
             title = 'Top Crops by Kenyan County') #-> m1 #%>%
 #mapview::mapshot(url = 'dma_zulily.html')
 
-print('dlfk')
+
 ## DINK/FAIL ----
 # Read in shapefile/see if I can make ggmap easily (if not, then do it some other viz...)
 library('sf')
