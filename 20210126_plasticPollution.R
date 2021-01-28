@@ -102,3 +102,28 @@ ggplot(eu_gdp, aes(year, gdp_pc)) +
   ylab("GDP Per Capita in Relation to EU Index (100)") +
   theme_bw()
 
+## BONUS TIDY TUESDAY, W/ BERNIE ----
+# b/c why not: https://github.com/R-CoderDotCom/ggbernie?fbclid=IwAR2OJjpWrkZXV76aHOScdxmYufQZa590EG8demLJ3ocfS5kNiEC47HJR-9g
+# found this pkg as one of my recommended articles on google
+remotes::install_github("R-CoderDotCom/ggbernie@main")
+library(ggbernie)
+
+# Plot top 2020 parent companies by total plastics count, with Bernie on the end
+plastics %>%
+  filter(year == '2020') %>%
+  group_by(parent_company) %>%
+  summarise(total = sum(grand_total,na.rm = TRUE)) %>%
+  arrange(desc(total)) %>%
+  # take out top three (unbranded and null)
+  slice(-c(1:3)) %>%
+  janitor::adorn_percentages(denominator = 'col') %>%
+  slice(1:20) %>%
+  ggplot(aes(y=reorder(parent_company,total),x=total)) +
+  geom_col() +
+  labs(x='Percentage of Found Plastic Waste',y='',title='Top 20 Parent Companies for Plastic Cleaned up in 2020',
+       caption = 'Made with love in R',subtitle = 'Data sourced from Break Free From Plastic, courtesy of Sarah Sauve') +
+  scale_x_continuous(labels = scales::percent) +
+  ggbernie::geom_bernie() +
+  theme_bw() +
+  ggsave('plasticPollution_bernie',device = 'png')
+  
