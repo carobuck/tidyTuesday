@@ -119,13 +119,15 @@ retirement %>%
   labs(x='Year',y='Retirement Savings',color = 'Race',
        title = 'Average Retirement Savings by Race over Time',
        caption = 'Data sourced from the Urban Institute') +
-  theme_bougie() +
-  ggsave('lifeWealth.png')
+  theme_bougie() #+
 ```
 
-    ## Saving 7 x 5 in image
-
 ![](20210209_lifetimeWealth_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+
+``` r
+  # Saving to post 
+  #ggsave('lifeWealth.png')
+```
 
 Ha! So it’s not the most beautiful (or necessarily color accessible),
 but it was fun to make something a little different and learn a new
