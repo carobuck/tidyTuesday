@@ -1,0 +1,88 @@
+---
+title: "Lifetime Wealth"
+author: "Caro Buck"
+date: "2/9/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Lifetime Wealth + Race
+
+For this week's \#TidyTuesday, I'm trying something new by using a Markdown doc to create my visualization. This week's data looks at wealth inequities, especially by race, with data from the [Urban Institute](https://apps.urban.org/features/wealth-inequality-charts/) and US Census. I'm going to look at differences in retirement amounts, by race and year, with a custom/DIY ggplot2 theme.
+
+## Reading in the Data + Loading Libraries
+
+```{r message=FALSE, warning=FALSE, include=TRUE, results='hide'}
+library(tidyverse)
+retirement <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-09/retirement.csv')
+```
+
+Let's get a glimpse of the data for what we'll be working with. How many races? How many years?
+
+```{r}
+retirement %>%
+  glimpse()
+
+retirement %>% count(race)
+
+retirement %>% summary()
+```
+
+## Now let's get to plotting!
+
+First, just a basic ggplot2 to see what we're working with:
+
+```{r}
+retirement %>%
+  ggplot(aes(x=year,y=retirement,color = race)) +
+  geom_line() +
+  geom_point() +
+  scale_y_continuous(labels = scales::dollar) +
+  labs(x='Year',y='Retirement Savings',color = 'Race',
+       title = 'Average Retirement Savings by Race over Time',
+       caption = 'Data sourced from the Urban Institute')
+```
+
+I think we can make this a *little* more exciting visually; let's make a custom ggplot2 theme. I'll start with the theme_bw(), since I tend to like that one and use it a lot for my plots.
+
+Some of the helpful links for reference: [this](https://joeystanley.com/blog/custom-themes-in-ggplot2) and [this](https://www.andrewheiss.com/blog/2017/09/27/working-with-r-cairo-graphics-custom-fonts-and-ggplot/#:~:text=R%20and%20ggplot%20can%20create,font%20family%20for%20the%20plot).
+
+Also, [this](https://github.com/hrbrmstr/hrbrthemes) is good reference for some pre-built themes from the hrbrthemes R package (if I'm looking for some variety in life).
+
+What fonts are actually available on my computer? After some exploration, let's use Copperplate for this exercise.
+
+```{r include=TRUE, results='hide'}
+library(systemfonts)
+system_fonts()
+
+theme_bougie <- function () { 
+    theme_bw(base_size=12, base_family="Copperplate") %+replace% 
+        theme(
+            panel.background = element_rect(fill = 'darkseagreen1'),
+            panel.border = element_rect(fill=NA,color = 'purple'),
+            panel.grid = element_line(color = 'darkturquoise'),
+            legend.position = 'bottom',
+            legend.background = element_rect(fill = 'orange')
+        )
+}
+```
+
+Now let's see how that theme looks on our chart:
+
+```{r}
+retirement %>%
+  ggplot(aes(x=year,y=retirement,color = race)) +
+  geom_line() +
+  geom_point() +
+  scale_y_continuous(labels = scales::dollar) +
+  labs(x='Year',y='Retirement Savings',color = 'Race',
+       title = 'Average Retirement Savings by Race over Time',
+       caption = 'Data sourced from the Urban Institute') +
+  theme_bougie() +
+  ggsave('lifeWealth.png')
+```
+
+Ha! So it's not the most beautiful (or necessarily color accessible), but it was fun to make something a little different and learn a new technique!
