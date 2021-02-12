@@ -82,7 +82,7 @@ retirement %>%
        caption = 'Data sourced from the Urban Institute')
 ```
 
-![](Figs/unnamed-chunk-3-1.png)<!-- -->
+![](Figs/plot_basic-1.png)<!-- -->
 
 I think we can make this a *little* more exciting visually; let's make a custom ggplot2 theme. I'll start with the theme_bw(), since I tend to like that one and use it a lot for my plots.
 
@@ -124,6 +124,6 @@ retirement %>%
   theme_bougie() 
 ```
 
-![](Figs/unnamed-chunk-5-1.png)<!-- -->
+![](Figs/plot_fancy-1.png)<!-- -->
 
 Ha! So it's not the most beautiful (or necessarily color accessible), but it was fun to make something a little different and learn a new technique!
