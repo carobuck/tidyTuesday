@@ -1,0 +1,162 @@
+---
+title: "Tidy Tuesday Employment Status"
+author: "Caro Buck"
+date: "2/23/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Employment Status
+
+Data this week are sourced from Bureau of Labor Statistics.
+
+## Load Libraries + Data
+
+```{r prep}
+
+library(tidyverse)
+
+employed <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-23/employed.csv')
+
+earn <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-23/earn.csv')
+
+```
+
+## Let's check out the data
+
+Read in, clean it up.
+
+```{r eda}
+employed %>% glimpse()
+employed %>% count(year)
+employed %>% count(industry)
+# Industry is messy/maybe some errors, need to filter a few things out (some race/gender categories)
+
+earn %>% glimpse()
+```
+
+## Make the plot
+
+Goal: thinking of making circle bar chart like [this](https://www.r-graph-gallery.com/297-circular-barplot-with-groups.html), because it just sounds kinda fun/different. Select industry, year, industry total; get distinct; plot charts; facet by year.
+
+So. I learned that coord_polar doesn't support free scales in faceting, so I'm pivoting. My original plan won't really look good/be readable at all, but I found a pretty ish view of the data with geom_col, but not really usable/insightful. So I'll share that since it's pretty, and then make a more basic plot of total employment by industry, over time.
+
+```{r}
+
+employed %>%
+  filter(!industry %in% c('Men','Asian','Black or African American','Women','White')) %>%
+  filter(!is.na(industry)) %>%
+  # NEED TO DO THIS, OTHERWISE GET HUGE OVER-COUNTINGS (more reasonable now)
+  filter(race_gender == 'TOTAL') %>%
+  mutate(industry = case_when(
+    str_detect(industry,'Mining') ~ 'Mining, quarrying, and oil and gas extraction',
+    str_detect(industry,'trade') ~ 'Wholesale and retail trade',
+    str_detect(industry,'ther services') ~ 'Other services',
+    TRUE ~ industry)) %>% 
+  select(industry,industry_total,year) %>%
+  distinct() %>%
+  group_by(industry,year) %>%
+  summarise(industry_total = sum(industry_total)) %>%
+  # Checking we get more reasonable numbers for total employed counts (we good)
+  #group_by(year) %>% summarise(dds = sum(industry_total))
+  ggplot(aes(x=industry,y=industry_total,fill=as.factor(year))) +
+  geom_bar(stat = 'identity',position = 'dodge') +
+#  geom_col(aes(y=industry_total,x=industry,fill=as.factor(year)),position = 'dodge') +
+  theme_minimal() +
+  #coord_polar() +
+  theme(axis.text.x = element_blank()) +
+  facet_wrap(~industry, scales = 'free')
+```
+
+First make the pretty (but not necessarily readable) chart:
+
+```{r}
+# copy geom_col from above, need to reformat theme stuff to make it look nice
+```
+
+Then make the nicer (analytics POV) looking plot:
+
+```{r}
+employed %>%
+  filter(!industry %in% c('Men','Asian','Black or African American','Women','White')) %>%
+  filter(!is.na(industry)) %>%
+  # NEED TO DO THIS, OTHERWISE GET HUGE OVER-COUNTINGS (more reasonable now)
+  filter(race_gender == 'TOTAL') %>%
+  mutate(industry = case_when(
+    str_detect(industry,'Mining') ~ 'Mining, quarrying, and oil and gas extraction',
+    str_detect(industry,'trade') ~ 'Wholesale and retail trade',
+    str_detect(industry,'ther services') ~ 'Other services',
+    TRUE ~ industry)) %>% 
+  select(industry,industry_total,year) %>%
+  distinct() %>%
+  group_by(industry,year) %>%
+  summarise(industry_total = sum(industry_total)) %>%
+  ungroup() %>%
+  ggplot(aes(x=year,y=industry_total,color=industry,label=industry,group=industry)) +
+  geom_line() +
+  geom_point() +
+  directlabels::geom_dl(method = list(directlabels::dl.trans(x = x+0.2),'last.points',cex = 0.8)) +
+  scale_x_discrete(expand = c(0,1)) +
+  theme_minimal() +
+  theme(legend.position = 'none') + ggsave('test.png')
+```
+
+## Different idea...
+
+Inspired by that weird spray-painted flower Mams and Bops gave me in middle school.
+
+```{r}
+## Very important to set seed (before every run)! Otherwise get values alllll over the place!
+set.seed(2)
+employed %>%
+  filter(race_gender %in% c('Women','Men')) %>%
+  filter(!industry %in% c('Men','Asian','Black or African American','Women','White')) %>%
+  filter(!is.na(industry)) %>%
+  mutate(industry = case_when(
+    str_detect(industry,'Mining') ~ 'Mining, quarrying, and oil and gas extraction',
+    str_detect(industry,'trade') ~ 'Wholesale and retail trade',
+    str_detect(industry,'ther services') ~ 'Other services',
+    TRUE ~ industry)) %>%
+  select(industry,industry_total,year,race_gender) %>%
+  distinct() %>%
+  group_by(industry,year,race_gender) %>%
+  summarise(industry_total = sum(industry_total)) %>%
+  ungroup() %>%
+  pivot_wider(names_from = race_gender,values_from = industry_total) %>%
+  filter(year=='2020') %>%
+  # Let's make a star burst aRt inspired flower plot (ish) showing difference between male and females in industry for 2020
+  # there's maybe a better way to make this "fake" data for the center point, but this works for now
+  mutate(diff=(Men-Women)/Women,
+         filler = 0,
+         xaxis = runif(nrow(.),min = -1,max = 1),
+         g_col = ifelse(diff >0,'More Men','More Women')) %>%
+  select(-c(2:4)) %>%
+  pivot_longer(2:3) %>%
+  mutate(xaxis = ifelse(name == 'filler',0,xaxis)) %>% 
+  # Make a sep df so can label more nicely the outer points
+  #filter(name!='filler') -> labels_df
+  ggplot(aes(x=xaxis,y=value,color=g_col,group = industry))+#,color=race_gender,group=race_gender)) +
+  geom_line() +
+  geom_point() +
+  scale_color_manual(values = c('darkorange','cornflowerblue'),name='') +
+  ggrepel::geom_text_repel(data=labels_df[labels_df$value>1,],nudge_y = .2,color='darkslategray',
+                           aes(x=xaxis,y=value,label = industry)) +
+  ggrepel::geom_text_repel(data=labels_df[labels_df$value< -0.5,],nudge_y = -.2,color = 'darkslategray',
+                           aes(x=xaxis,y=value,label = industry)) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_x_continuous(expand = c(0,1)) +
+  theme_minimal(base_family = 'Helvetica') +
+  labs(x='',title='Male to Female Ratio by Industry, in 2020',y='Greater Male to Female Ratio -->',
+       caption = 'Data sourced from Bureau of Labor Statistics',
+       subtitle = 'Construction takes the top spot, with over 7 men to every 1 woman') +
+  theme(panel.grid.minor.x = element_blank(),
+        panel.grid.major.x = element_blank(),
+        axis.text.x = element_blank()) +
+  ggsave('employstatus.png')
+
+```
+
+![](http://127.0.0.1:45393/chunk_output/77A53A035112C0C4/F9ACC78D/c0qe66lf9mt9p/000015.png)
